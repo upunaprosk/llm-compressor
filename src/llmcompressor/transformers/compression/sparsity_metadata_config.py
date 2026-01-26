@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-import warnings
+from typing import Dict, List, Optional
 
 from compressed_tensors import CompressionFormat, SparsityCompressionConfig
 from compressed_tensors.config import SparsityStructure
@@ -32,7 +30,7 @@ class SparsityConfigMetadata:
 
     @staticmethod
     def infer_global_sparsity(
-        model: Module, state_dict: dict[str, Tensor] | None = None
+        model: Module, state_dict: Optional[Dict[str, Tensor]] = None
     ) -> float:
         """
         Calculates the global percentage of sparse zero weights in the model
@@ -49,12 +47,12 @@ class SparsityConfigMetadata:
 
     @staticmethod
     def infer_sparsity_structure(
-        model: Module | None = None, check_only_modifiers: bool | None = False
+        model: Optional[Module] = None, check_only_modifiers: Optional[bool] = False
     ) -> str:
         """
         Determines what sparsity structure, if any, was applied.
 
-        First, there is an attempt to deduce the sparsity structure
+        First, there is an attempt to dedue the sparsity structure
         from the currently active sparse session.
 
         If that fails, the sparsity structure is inferred from the
@@ -85,12 +83,12 @@ class SparsityConfigMetadata:
     @staticmethod
     def from_pretrained(
         model: Module,
-        state_dict: dict[str, Tensor] | None = None,
+        state_dict: Optional[Dict[str, Tensor]] = None,
         compress: bool = False,
-        quantization_format: CompressionFormat | None = None,
+        quantization_format: Optional[CompressionFormat] = None,
         disable_sparse_compression: bool = False,
-        sparsity_structure: str | None = None,
-    ) -> SparsityCompressionConfig | None:
+        sparsity_structure: Optional[str] = None,
+    ) -> Optional["SparsityCompressionConfig"]:
         """
         Determines compression type and informational parameters for a given model
 
@@ -115,16 +113,6 @@ class SparsityConfigMetadata:
         if sparsity_structure is None:
             sparsity_structure = SparsityConfigMetadata.infer_sparsity_structure(
                 model=model
-            )
-
-        if quantization_format == CompressionFormat.marlin_24:
-            warnings.warn(
-                "The marlin_24 compression format is deprecated and will be removed "
-                "in a future release, as vLLM no longer supports marlin_24 models. "
-                "See https://github.com/vllm-project/llm-compressor/issues/2267 "
-                "for more details.",
-                DeprecationWarning,
-                stacklevel=2,
             )
 
         if (
@@ -167,7 +155,7 @@ class SparsityConfigMetadata:
     def fill_config_details(
         config: SparsityCompressionConfig,
         model: Module,
-        state_dict: dict[str, Tensor] | None = None,
+        state_dict: Optional[Dict[str, Tensor]] = None,
     ):
         """
         Fills in informational sparsity parameters from a given model
@@ -185,7 +173,7 @@ class SparsityConfigMetadata:
     @staticmethod
     def is_sparse24_bitmask_supported(
         model: Module,
-        sparsity_structure: str | None = None,
+        sparsity_structure: Optional[str] = None,
     ) -> bool:
         """
         Determines if sparse 24 bitmask sparse compressor is supported for a given model
@@ -214,7 +202,7 @@ class SparsityConfigMetadata:
 
         # when model is quantized, and has 2:4 sparsity
 
-        supported_scheme_types: list[str] = [
+        supported_scheme_types: List[str] = [
             QuantizationType.INT.value,
             QuantizationType.FLOAT.value,
         ]

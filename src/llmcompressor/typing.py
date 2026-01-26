@@ -2,9 +2,8 @@
 Defines type aliases for the llm-compressor library.
 """
 
-from typing import Iterable
+from typing import Union
 
-import torch
 from datasets import Dataset, DatasetDict, IterableDataset
 from transformers import (
     BaseImageProcessor,
@@ -14,12 +13,9 @@ from transformers import (
 )
 
 # Tokenizer or Processor. Processors do not inherit from a unified base class
-Processor = (
-    PreTrainedTokenizer | BaseImageProcessor | FeatureExtractionMixin | ProcessorMixin
-)
+Processor = Union[
+    PreTrainedTokenizer, BaseImageProcessor, FeatureExtractionMixin, ProcessorMixin
+]
 
 # Supported dataset types, IterableDataset is a streamed dataset
-DatasetType = Dataset | DatasetDict | IterableDataset
-
-# Torch types
-NamedModules = Iterable[tuple[str, torch.nn.Module]]
+DatasetType = Union[Dataset, DatasetDict, IterableDataset]

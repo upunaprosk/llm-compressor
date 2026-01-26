@@ -1,3 +1,5 @@
+from typing import List
+
 import torch
 from torch.nn import Module
 
@@ -50,8 +52,8 @@ class LogarithmicEqualizationModifier(SmoothQuantModifier):
     """
 
     def _calculate_smoothing_scales(
-        self, balance_layers: list[Module], activation_scales: torch.Tensor
-    ) -> torch.Tensor:
+        self, balance_layers: List[Module], activation_scales: torch.Tensor
+    ) -> List[float]:
         """
         Calculate how much smoothing to apply to each channel based on the dynamic
         range of the activations and the following weights.

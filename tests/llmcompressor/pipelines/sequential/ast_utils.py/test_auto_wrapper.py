@@ -1,4 +1,3 @@
-# flake8: noqa
 import ast
 import textwrap
 from types import SimpleNamespace
@@ -22,14 +21,13 @@ def check_wrapping(
 
     wrapped_lines = ast.unparse(wrapped).splitlines()
     output_lines = textwrap.dedent(output).splitlines()[1:]
-    lines = ("\n".join(wrapped_lines), "\n".join(output_lines))
 
-    assert len(wrapped_lines) == len(output_lines), lines
+    assert len(wrapped_lines) == len(output_lines)
     for wrapped_line, output_line in zip(wrapped_lines, output_lines):
         if "# skip" in output:
             continue
 
-        assert wrapped_line == output_line, lines
+        assert wrapped_line == output_line
 
 
 def test_static_if():
@@ -189,26 +187,5 @@ def test_function_variadic():
 
     def forward(a, *b, c=5, **d):
         () = wrapped_0(a, b, c, d)
-    """
-    check_wrapping(source, output)
-
-
-def test_walrus():
-    """Checks for handling variadic names created via function def"""
-
-    source = """
-    def forward():
-        if (x := (1 + 2)):
-            pass
-    """
-    output = """
-    @torch.fx.wrap
-    def wrapped_0():
-        if (x := (1 + 2)):
-            pass
-        return (x,)
-    
-    def forward():
-        (x,) = wrapped_0()  # skip: some envs use "(x,)" -> "x,"
     """
     check_wrapping(source, output)

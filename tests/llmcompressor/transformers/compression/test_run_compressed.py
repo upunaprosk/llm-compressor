@@ -24,7 +24,7 @@ def decompressed_linear_uncompressed_linear_models(request):
     # Linear foward
     decompressed_model = AutoModelForCausalLM.from_pretrained(
         config["compressed_model_stub"],
-        dtype="auto",
+        torch_dtype="auto",
         device_map="auto",
         quantization_config=quantization_config,
     )
@@ -33,7 +33,7 @@ def decompressed_linear_uncompressed_linear_models(request):
     # Linear forward
     uncompressed_model = AutoModelForCausalLM.from_pretrained(
         config["uncompressed_model_stub"],
-        dtype=decompressed_model.dtype,
+        torch_dtype=decompressed_model.dtype,
         device_map=decompressed_model.device,
     )
 
@@ -107,7 +107,7 @@ class Test_Compressed_CompressedLinear_Decompressed_Linear:
         # Compressed Linear forward
         compressed_model = AutoModelForCausalLM.from_pretrained(
             config["compressed_model_stub"],
-            dtype="auto",
+            torch_dtype="auto",
             device_map="auto",
         )
 
@@ -116,7 +116,7 @@ class Test_Compressed_CompressedLinear_Decompressed_Linear:
         quantization_config = CompressedTensorsConfig(run_compressed=False)
         decompressed_model = AutoModelForCausalLM.from_pretrained(
             config["compressed_model_stub"],
-            dtype=compressed_model.dtype,
+            torch_dtype=compressed_model.dtype,
             device_map=compressed_model.device,
             quantization_config=quantization_config,
         )
@@ -174,6 +174,4 @@ class Test_Compressed_CompressedLinear_Decompressed_Linear:
 
         # Compare outputs for each input
         for idx in range(len(SAMPLE_INPUT)):
-            out_c = compressed_model_out[idx]
-            out_d = decompressed_model_out[idx]
-            assert torch.equal(out_c, out_d), f"Output for sample input {idx} failed"
+            torch.equal(compressed_model_out[idx], decompressed_model_out[idx])

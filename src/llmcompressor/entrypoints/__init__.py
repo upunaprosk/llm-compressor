@@ -8,5 +8,5 @@ for model optimization tasks.
 """
 
 from .oneshot import Oneshot, oneshot
-from .model_free import model_free_ptq
+from .train import train
 from .utils import post_process, pre_process

@@ -18,7 +18,7 @@ recipe = [
 To use your own model, start with an existing example change the `model_id` to match your own model stub.
 ```python
 model_id = "path/to/your/model"
-model = AutoModelForCausalLM.from_pretrained(model_id, dtype="auto")
+model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype="auto")
 ```
 
 ## Adding Mappings ##
@@ -42,6 +42,4 @@ In order to target weight and activation scaling locations within the model, the
 ]
 ```
 
-Note: the mappings define which layers get smoothed whereas targets and ignore define which layers get quantized. So if you include a layer in the ignore list that is going to get matched due to the included mappings, it will get smoothed but not quantized.
-
-To support other model families, you can supply your own mappings via the `mappings` argument with instantiating the `AWQModifier`, or you can add them to the registry [here](/src/llmcompressor/modifiers/awq/mappings.py) (contributions are welcome!)
+To support other model families, you can add supply your own mappings via the `mappings` argument with instantiating the `AWQModifier`, or you can add them to the registry [here](/src/llmcompressor/modifiers/awq/mappings.py) (contributions are welcome!)

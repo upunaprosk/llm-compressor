@@ -20,22 +20,13 @@ from transformers.models.qwen3_moe.modeling_qwen3_moe import (
     Qwen3MoeSparseMoeBlock as OriginalQwen3MoeSparseMoeBlock,
 )
 
-from llmcompressor.modeling.moe_context import MoECalibrationModule
 
-
-@MoECalibrationModule.register("Qwen3MoeSparseMoeBlock")
-class CalibrationQwen3MoeSparseMoeBlock(MoECalibrationModule):
-    """
-    Calibration version of Qwen3MoeSparseMoeBlock that sends all tokens to all experts.
-    """
-
-    is_permanent = False
-
+class Qwen3MoeSparseMoeBlock(torch.nn.Module):
     def __init__(
         self,
-        original: OriginalQwen3MoeSparseMoeBlock,
         config: Qwen3MoeConfig,
-        calibrate_all_experts: bool = True,
+        original: OriginalQwen3MoeSparseMoeBlock,
+        calibrate_all_experts: bool,
     ):
         super().__init__()
         self.num_experts = config.num_experts
@@ -46,7 +37,7 @@ class CalibrationQwen3MoeSparseMoeBlock(MoECalibrationModule):
         self.gate = original.gate
         self.experts = original.experts
 
-    def forward(self, hidden_states: torch.Tensor):
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         batch_size, sequence_length, hidden_dim = hidden_states.shape
         hidden_states = hidden_states.view(-1, hidden_dim)
         # router_logits: (batch * sequence_length, n_experts)
@@ -95,5 +86,12 @@ class CalibrationQwen3MoeSparseMoeBlock(MoECalibrationModule):
         )
         return final_hidden_states, router_logits
 
-    def restore(self, original: torch.nn.Module) -> torch.nn.Module:
-        return original
+
+def replace(
+    config: Qwen3MoeConfig,
+    module: OriginalQwen3MoeSparseMoeBlock,
+    calibrate_all_experts: bool,
+):
+    return Qwen3MoeSparseMoeBlock(
+        config=config, original=module, calibrate_all_experts=calibrate_all_experts
+    )

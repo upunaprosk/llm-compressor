@@ -7,7 +7,7 @@ from setuptools_scm import ScmVersion
 # Set the build type using an environment variable to give us
 # different package names based on the reason for the build.
 VALID_BUILD_TYPES = {"release", "nightly", "dev"}
-BUILD_TYPE = os.environ.get("BUILD_TYPE", "dev")
+BUILD_TYPE = os.environ.get("BUILD_TYPE", "release")
 if BUILD_TYPE not in VALID_BUILD_TYPES:
     raise ValueError(
         f"Unsupported build type {BUILD_TYPE!r}, must be one of {VALID_BUILD_TYPES}"
@@ -114,41 +114,35 @@ setup(
         ("pyyaml>=6.0.1,<=6.0.3" if BUILD_TYPE == "release" else "pyyaml>=6.0.1"),
         # librosa dependency numba is currently not compatible with numpy>=2.3
         # https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
-        ("numpy>=2.0.0,<=2.3.5" if BUILD_TYPE == "release" else "numpy>=2.0.0"),
+        ("numpy>=2.0.0,<=2.3.3" if BUILD_TYPE == "release" else "numpy>=2.0.0"),
         (
             "requests>=2.32.2,<=2.32.5"
             if BUILD_TYPE == "release"
             else "requests>=2.32.2"
         ),
         ("tqdm>=4.66.3,<=4.67.1" if BUILD_TYPE == "release" else "tqdm>=4.66.3"),
-        ("torch>=2.7.0,<=2.9.1" if BUILD_TYPE == "release" else "torch>=2.7.0,<=2.9.1"),
+        ("torch>=2.7.0,<=2.9.0" if BUILD_TYPE == "release" else "torch>=2.7.0"),
         (
-            "transformers>=4.56.1,<=4.57.5"
+            "transformers>=4.53.0,<=4.57.1"
             if BUILD_TYPE == "release"
-            else "transformers>=4.56.1"
+            else "transformers>=4.53.0"
         ),
-        ("datasets>=4.0.0,<=4.4.1" if BUILD_TYPE == "release" else "datasets>=4.0.0"),
+        ("datasets>=4.0.0,<=4.1.1" if BUILD_TYPE == "release" else "datasets>=4.0.0"),
         (
-            # auto-round 0.9.1 cannot work with accelerate <1.10.0
-            "auto-round>=0.9.4,<=0.9.4"
-            if BUILD_TYPE == "release"
-            else "auto-round>=0.9.4"
-        ),
-        (
-            "accelerate>=1.6.0,<=1.12.0"
+            "accelerate>=1.6.0,<=1.10.1"
             if BUILD_TYPE == "release"
             else "accelerate>=1.6.0"
         ),
         (
-            "nvidia-ml-py>=12.560.30,<=13.590.44"
+            "nvidia-ml-py>=12.560.30,<=13.580.82"
             if BUILD_TYPE == "release"
             else "nvidia-ml-py>=12.560.30"
         ),
-        ("pillow>=10.4.0,<=12.0.0" if BUILD_TYPE == "release" else "pillow>=10.4.0"),
+        ("pillow>=10.4.0,<=11.3.0" if BUILD_TYPE == "release" else "pillow>=10.4.0"),
         (
-            "compressed-tensors==0.13.0"
+            "compressed-tensors==0.12.2"
             if BUILD_TYPE == "release"
-            else "compressed-tensors>=0.13.1a2"
+            else "compressed-tensors>=0.12.3a2"
         ),
     ],
     extras_require={
@@ -157,16 +151,16 @@ setup(
             "pytest>=6.0.0",
             "pytest-mock>=3.6.0",
             "pytest-rerunfailures>=13.0",
-            "lm_eval==0.4.9.2",
+            "lm_eval==0.4.5",
             # test dependencies
             "beautifulsoup4~=4.12.3",
-            "cmarkgfm>=2024.1.14",
+            "cmarkgfm~=2024.1.14",
             "trl>=0.10.1",
             "pandas<2.3.0",
-            "torchvision<=0.24.1",
+            "torchvision",
             "librosa==0.11.0",
             "soundfile",
-            "torchcodec<=0.9.1",
+            "torchcodec",
             # linting, formatting, and type checking
             "mypy~=1.10.0",
             "ruff~=0.4.8",
@@ -183,15 +177,14 @@ setup(
             "mkdocstrings-python",
             "mkdocs-gen-files",
             "mkdocs-nav-weight",
-        ],
+        ]
     },
     entry_points={
         "console_scripts": [
             "llmcompressor.trace=llmcompressor.transformers.tracing.debug:main",
-            "llmcompressor.reindex_fused_weights=llmcompressor.entrypoints.model_free.reindex_fused_weights:main",
         ]
     },
-    python_requires=">=3.10",
+    python_requires=">=3.9",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",

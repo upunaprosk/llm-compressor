@@ -1,4 +1,5 @@
 import requests
+import torch
 from PIL import Image
 from transformers import AutoProcessor, Gemma3ForConditionalGeneration
 
@@ -8,15 +9,21 @@ from llmcompressor.utils import dispatch_for_generation
 
 # Load model.
 model_id = "google/gemma-3-4b-it"
-model = Gemma3ForConditionalGeneration.from_pretrained(model_id, dtype="auto")
+model = Gemma3ForConditionalGeneration.from_pretrained(model_id, torch_dtype="auto")
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
 # Oneshot arguments
-BATCH_SIZE = 4
+DATASET_ID = "flickr30k"
+DATASET_SPLIT = {"calibration": "test[:512]"}
 NUM_CALIBRATION_SAMPLES = 512
 MAX_SEQUENCE_LENGTH = 2048
-DATASET_ID = "flickr30k"
-DATASET_SPLIT = {"calibration": f"test[:{NUM_CALIBRATION_SAMPLES}]"}
+
+
+# Define a oneshot data collator for multimodal inputs.
+def data_collator(batch):
+    assert len(batch) == 1
+    return {key: torch.tensor(value) for key, value in batch[0].items()}
+
 
 # Recipe
 recipe = [
@@ -34,14 +41,14 @@ recipe = [
 # Perform oneshot
 oneshot(
     model=model,
-    processor=processor,
+    tokenizer=model_id,
     dataset=DATASET_ID,
     splits=DATASET_SPLIT,
     recipe=recipe,
-    batch_size=BATCH_SIZE,
-    shuffle_calibration_samples=False,
     max_seq_length=MAX_SEQUENCE_LENGTH,
     num_calibration_samples=NUM_CALIBRATION_SAMPLES,
+    trust_remote_code_model=True,
+    data_collator=data_collator,
 )
 
 # Confirm generations of the quantized model look sane.

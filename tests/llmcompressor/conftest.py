@@ -48,11 +48,10 @@ def _files_size_mb(path_list: List[str]) -> int:
 
 @pytest.fixture(scope="session", autouse=True)
 def check_for_created_files():
-    local_ignore_dirs = ["__pycache__", "sparse_logs"]
-    tmp_ignore_dirs = ["pytest-of", "torchinductor"]
-    start_files_root = _get_files(directory=r".", ignore_dirs=local_ignore_dirs)
+    ignore_dirs = ["__pycache__", "sparse_logs"]
+    start_files_root = _get_files(directory=r".", ignore_dirs=ignore_dirs)
     start_files_temp = _get_files(
-        directory=tempfile.gettempdir(), ignore_dirs=tmp_ignore_dirs
+        directory=tempfile.gettempdir(), ignore_dirs=["pytest-of"]
     )
     yield
     if wandb:
@@ -62,7 +61,7 @@ def check_for_created_files():
         shutil.rmtree(log_dir)
 
     # allow creation of __pycache__ directories
-    end_files_root = _get_files(directory=r".", ignore_dirs=local_ignore_dirs)
+    end_files_root = _get_files(directory=r".", ignore_dirs=ignore_dirs)
     # assert no files created in root directory while running
     # the pytest suite
     assert len(start_files_root) >= len(end_files_root), (
@@ -75,7 +74,7 @@ def check_for_created_files():
     max_allowed_sized_temp_files_megabytes = 1
     # pytest temp files are automatically deleted, exclude from size calculation
     end_files_temp = _get_files(
-        directory=tempfile.gettempdir(), ignore_dirs=tmp_ignore_dirs
+        directory=tempfile.gettempdir(), ignore_dirs=["pytest-of"]
     )
     created_temp_files = set(end_files_temp) - set(start_files_temp)
 

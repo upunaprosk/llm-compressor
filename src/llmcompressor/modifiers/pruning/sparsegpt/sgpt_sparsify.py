@@ -30,6 +30,31 @@ def accumulate_hessian(
     num_added = inp.shape[0]  # note this is the number of dataset samples, not
     # multiplied by the sequence length
 
+    #########################################
+    # Compute debiasing term
+    import os
+    alpha = float(os.environ.get("ALPHA", "0"))
+    H_x01 = None
+    if alpha != 0.0 and inp.shape[0] == 2:
+        X0 = inp[0].to(dtype=SGPT_PRECISION)  # Shape: [seq_len, hidden_dim]
+        X1 = inp[1].to(dtype=SGPT_PRECISION)  # Shape: [seq_len, hidden_dim]
+        delta = math.sqrt(2 / (num_samples + num_added)) * (X0 - X1)
+        H_x01 = delta.t().matmul(delta)
+    # if H_x01 is None:
+    #     print(f"accumulate_hessian: {alpha=} {inp.shape=}")
+    # else:
+    #     print(f"accumulate_hessian: {alpha=} {inp.shape=} {H_x01.shape=} {H_x01.device=}")
+    if False:
+        if H_x01 is not None:
+            x01norm = float(torch.norm(X0 - X1, p=2))
+            Hx01norm = float(torch.norm(H_x01, p=2))
+            Hx01diagnorm = float(torch.norm(torch.diag(H_x01), p=2))
+            print(f"accumulate_hessian: {Hx01norm=} {Hx01diagnorm=} {x01norm=}")
+        Hnorm = float(torch.norm(H, p=2))
+        Hdiagnorm = float(torch.norm(torch.diag(H), p=2))
+        print(f"accumulate_hessian: {Hnorm=} {Hdiagnorm=}")
+    #########################################
+
     if isinstance(module, (torch.nn.Linear, transformers.Conv1D)):
         if len(inp.shape) == 3:
             inp = inp.reshape((-1, inp.shape[-1]))
@@ -52,6 +77,12 @@ def accumulate_hessian(
     inp = inp.to(dtype=SGPT_PRECISION)
     inp = math.sqrt(2 / num_samples) * inp
     H += inp.matmul(inp.t())
+
+    #########################################
+    # Add debiasing term
+    if H_x01 is not None:
+        H += alpha * H_x01
+    #########################################
 
     return H, num_samples
 

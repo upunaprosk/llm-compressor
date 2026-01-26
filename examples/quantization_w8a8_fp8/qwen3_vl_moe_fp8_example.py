@@ -1,15 +1,19 @@
 from transformers import AutoProcessor, Qwen3VLMoeForConditionalGeneration
 
 from llmcompressor import oneshot
+from llmcompressor.modeling import replace_modules_for_calibration
 from llmcompressor.modifiers.quantization import QuantizationModifier
 
-# NOTE: Requires a minimum of transformers 4.57.0
+# NOTE: Qwen3-VL-MoE support is not in transformers<=4.56.2
+# you may need to install transformers from source
+
 
 MODEL_ID = "Qwen/Qwen3-VL-235B-A22B-Instruct"
 
 # Load model.
-model = Qwen3VLMoeForConditionalGeneration.from_pretrained(MODEL_ID, dtype="auto")
+model = Qwen3VLMoeForConditionalGeneration.from_pretrained(MODEL_ID, torch_dtype="auto")
 processor = AutoProcessor.from_pretrained(MODEL_ID)
+model = replace_modules_for_calibration(model)
 
 # Configure the quantization algorithm and scheme.
 # In this case, we:

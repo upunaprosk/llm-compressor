@@ -13,45 +13,35 @@ on:
 
 env:
   CADENCE: "commit"
-  HF_TOKEN: ${{ secrets.HF_TOKEN_READ }}
-  UV_SYSTEM_PYTHON: 1
-  UV_TORCH_BACKEND: "auto"
 
 jobs:
 
   base-tests:
-    runs-on: ibm-wdc-k8s-vllm-h100-solo
+    runs-on: ubuntu-22.04
     env:
       COVERAGE_FILE: ".coverage.base"
-      HF_TOKEN: ${{ secrets.HF_TOKEN_READ }}
-    strategy:
-      matrix:
-        python: ["3.10", "3.13"]
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.12'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
       - name: "⚙️ Install dependencies"
-        run: uv pip install .[dev]
+        run: pip3 install -U pip setuptools && pip3 install .[dev]
       - uses: actions/checkout@v4
         with:
-          repository: "vllm-project/compressed-tensors"
+          repository: "neuralmagic/compressed-tensors"
           path: "compressed-tensors"
           fetch-depth: 0
           fetch-tags: true
       - name: "⚙️ Install compressed-tensors dependencies"
         run: |
-          uv pip uninstall compressed-tensors
+          pip3 uninstall -y compressed-tensors
           export GIT_CEILING_DIRECTORIES="$(pwd)"
           cd compressed-tensors
-          BUILD_TYPE=nightly uv pip install .
+          BUILD_TYPE=nightly pip3 install .
       - name: "Clean compressed-tensors directory"
         run: rm -r compressed-tensors/
       - name: "⚙️ Prepare code coverage"
@@ -76,38 +66,31 @@ jobs:
           coverage report --data-file="$COVERAGE_FILE" --skip-empty --format="markdown" > "$GITHUB_STEP_SUMMARY"
 
   pytorch-tests:
-    runs-on: ibm-wdc-k8s-vllm-h100-solo
+    runs-on: ubuntu-22.04
     env:
       COVERAGE_FILE: ".coverage.pytorch"
-      HF_TOKEN: ${{ secrets.HF_TOKEN_READ }}
-    strategy:
-      matrix:
-        python: ["3.10", "3.13"]
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.11'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
       - name: "⚙️ Install dependencies"
-        run: uv pip install .[dev]
+        run: pip3 install -U pip setuptools && pip3 install .[dev]
       - uses: actions/checkout@v4
         with:
-          repository: "vllm-project/compressed-tensors"
+          repository: "neuralmagic/compressed-tensors"
           path: "compressed-tensors"
           fetch-depth: 0
           fetch-tags: true
       - name: "⚙️ Install compressed-tensors dependencies"
         run: |
-          uv pip uninstall compressed-tensors
+          pip3 uninstall -y compressed-tensors
           export GIT_CEILING_DIRECTORIES="$(pwd)"
           cd compressed-tensors
-          BUILD_TYPE=nightly uv pip install .
+          BUILD_TYPE=nightly pip3 install .
       - name: "Clean compressed-tensors directory"
         run: rm -r compressed-tensors/
       - name: "⚙️ Prepare code coverage"
@@ -148,12 +131,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+
       - name: "Install dependencies"
         run: |
-          uv pip install -U setuptools
-          uv pip install coverage setuptools-scm
+          pip3 install -U pip setuptools
+          pip3 install coverage setuptools-scm
           make build  # need to build to generate the version.py file
 
       - name: "Combine and report coverage"

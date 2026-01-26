@@ -4,11 +4,7 @@ import os
 import requests
 import torch
 from PIL import Image
-from transformers import (
-    AutoProcessor,
-    Mistral3ForConditionalGeneration,
-    default_data_collator,
-)
+from transformers import AutoProcessor, Mistral3ForConditionalGeneration
 
 from llmcompressor import oneshot
 from llmcompressor.modifiers.quantization import GPTQModifier
@@ -16,7 +12,7 @@ from llmcompressor.utils import dispatch_for_generation
 
 # Load model.
 model_id = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
-model = Mistral3ForConditionalGeneration.from_pretrained(model_id, dtype="auto")
+model = Mistral3ForConditionalGeneration.from_pretrained(model_id, torch_dtype="auto")
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
 # Use a custom calibration chat template, rather than the overly-verbose default
@@ -31,13 +27,17 @@ NUM_CALIBRATION_SAMPLES = 512
 MAX_SEQUENCE_LENGTH = 2048
 
 
-# Patch: mismatch between processor and model dtype
-def data_collator(features):
-    for feature in features:
-        feature["pixel_values"] = torch.tensor(
-            feature["pixel_values"], dtype=model.dtype
+# Define a oneshot data collator for multimodal inputs.
+def data_collator(batch):
+    assert len(batch) == 1
+    return {
+        key: (
+            torch.tensor(value)
+            if key != "pixel_values"
+            else torch.tensor(value, dtype=model.dtype)
         )
-    return default_data_collator(features, return_tensors="pt")
+        for key, value in batch[0].items()
+    }
 
 
 # Recipe

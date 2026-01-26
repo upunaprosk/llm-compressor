@@ -2,7 +2,7 @@ import ast
 import builtins
 from typing import Set, Tuple
 
-from compressed_tensors.utils import patch_attr
+from llmcompressor.utils import patch_attr
 
 
 class NameAnalyzer(ast.NodeVisitor):
@@ -73,13 +73,6 @@ class NameAnalyzer(ast.NodeVisitor):
         # Now visit the left side of the assignment
         for target in node.targets:
             self.visit(target)
-
-    def visit_NamedExpr(self, node: ast.NamedExpr):
-        # Visit the right side of the assignment first
-        self.visit(node.value)
-
-        # Now visit the left side of the assignment
-        self.visit(node.target)
 
     def visit_If(self, node: ast.If):
         self.visit(node.test)

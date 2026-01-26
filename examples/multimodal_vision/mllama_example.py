@@ -1,4 +1,5 @@
 import requests
+import torch
 from PIL import Image
 from transformers import AutoProcessor, MllamaForConditionalGeneration
 
@@ -8,7 +9,7 @@ from llmcompressor.utils import dispatch_for_generation
 
 # Load model.
 model_id = "meta-llama/Llama-3.2-11B-Vision-Instruct"
-model = MllamaForConditionalGeneration.from_pretrained(model_id, dtype="auto")
+model = MllamaForConditionalGeneration.from_pretrained(model_id, torch_dtype="auto")
 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
 # Oneshot arguments
@@ -16,6 +17,12 @@ DATASET_ID = "flickr30k"
 DATASET_SPLIT = "test"
 NUM_CALIBRATION_SAMPLES = 512
 MAX_SEQUENCE_LENGTH = 2048
+
+
+# Define a oneshot data collator for multimodal inputs.
+def data_collator(batch):
+    assert len(batch) == 1
+    return {key: torch.tensor(value) for key, value in batch[0].items()}
 
 
 # Recipe
@@ -37,6 +44,7 @@ oneshot(
     max_seq_length=MAX_SEQUENCE_LENGTH,
     num_calibration_samples=NUM_CALIBRATION_SAMPLES,
     trust_remote_code_model=True,
+    data_collator=data_collator,
     sequential_targets=["MllamaSelfAttentionDecoderLayer"],
 )
 

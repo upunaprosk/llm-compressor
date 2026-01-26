@@ -6,7 +6,7 @@ from llmcompressor.utils import dispatch_for_generation
 
 # Select model and load it.
 MODEL_ID = "google/gemma-2-9b-it"
-model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype="auto")
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID, torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
 # Select calibration dataset.
@@ -78,13 +78,23 @@ oneshot(
     num_calibration_samples=NUM_CALIBRATION_SAMPLES,
 )
 
+print(
+    "Note: Inference with the quantized kv_cache is not supported. ",
+    "Please use vLLM for inference with the quantized kv_cache.",
+)
 # Confirm generations of the quantized model look sane.
+
+# NOTE: transformers 4.49.0 results in a generation error with gemma2.
+# Consider either downgrading your transformers version to a previous version
+# or use vLLM for sample generation.
+# Note: compile is disabled: https://github.com/huggingface/transformers/issues/38333
 print("\n\n")
-print("========== SAMPLE GENERATION ==============")
 dispatch_for_generation(model)
-sample = tokenizer("Hello my name is", return_tensors="pt")
-sample = {key: value.to(model.device) for key, value in sample.items()}
-output = model.generate(**sample, max_new_tokens=100)
+print("========== SAMPLE GENERATION ==============")
+input_ids = tokenizer("Hello my name is", return_tensors="pt").input_ids.to(
+    model.device
+)
+output = model.generate(input_ids, max_new_tokens=100, disable_compile=True)
 print(tokenizer.decode(output[0]))
 print("==========================================\n\n")
 

@@ -1,10 +1,6 @@
 import torch
 from datasets import load_dataset
-from transformers import (
-    WhisperForConditionalGeneration,
-    WhisperProcessor,
-    default_data_collator,
-)
+from transformers import WhisperForConditionalGeneration, WhisperProcessor
 
 from llmcompressor import oneshot
 from llmcompressor.modifiers.quantization import GPTQModifier
@@ -13,7 +9,7 @@ from llmcompressor.utils import dispatch_for_generation
 # Select model and load it.
 MODEL_ID = "openai/whisper-large-v3"
 
-model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID, dtype="auto")
+model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID, torch_dtype="auto")
 model.config.forced_decoder_ids = None
 processor = WhisperProcessor.from_pretrained(MODEL_ID)
 
@@ -59,12 +55,9 @@ def process(sample):
         return_tensors="pt",
     )
 
-    # treat labels as calibration prefill
+    inputs["input_features"] = inputs["input_features"].to(dtype=model.dtype)
     inputs["decoder_input_ids"] = inputs["labels"]
     del inputs["labels"]
-
-    # strip extra dim added by multimodal processors
-    inputs = {key: value[0] for key, value in inputs.items()}
 
     return inputs
 
@@ -72,14 +65,10 @@ def process(sample):
 ds = ds.map(process, remove_columns=ds.column_names)
 
 
-# Patch: mismatch between processor and model dtype
-def data_collator(features):
-    for feature in features:
-        feature["input_features"] = torch.tensor(
-            feature["input_features"], dtype=model.dtype
-        )
-
-    return default_data_collator(features, return_tensors="pt")
+# Define a oneshot data collator for multimodal inputs.
+def data_collator(batch):
+    assert len(batch) == 1
+    return {key: torch.tensor(value) for key, value in batch[0].items()}
 
 
 # Recipe

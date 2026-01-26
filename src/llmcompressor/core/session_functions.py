@@ -7,15 +7,11 @@ creation, activation, reset operations, and lifecycle callback management.
 
 import threading
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import Any, Generator, Optional
 
 from llmcompressor.core.events import EventType
 from llmcompressor.core.session import CompressionSession
 from llmcompressor.core.state import ModifiedState
-
-if TYPE_CHECKING:
-    from llmcompressor.pipelines.sequential import Subgraph
-
 
 __all__ = [
     "create_session",
@@ -154,7 +150,7 @@ class LifecycleCallbacks:
         return cls.event(EventType.CALIBRATION_EPOCH_START, **kwargs)
 
     @classmethod
-    def sequential_epoch_end(cls, subgraph: "Subgraph", **kwargs) -> ModifiedState:
+    def sequential_epoch_end(cls, **kwargs) -> ModifiedState:
         """
         Invoke a sequential epoch end event for the active session. This event should be
         called after one sequential layer has been calibrated/trained for one epoch
@@ -162,7 +158,7 @@ class LifecycleCallbacks:
         This is called after a sequential layer has been calibrated with one batch, see
         `src/llmcompressor/pipelines/sequential/pipeline.py` for usage example
         """
-        return cls.event(EventType.SEQUENTIAL_EPOCH_END, subgraph=subgraph, **kwargs)
+        return cls.event(EventType.SEQUENTIAL_EPOCH_END, **kwargs)
 
     @classmethod
     def calibration_epoch_end(cls, **kwargs) -> ModifiedState:

@@ -7,19 +7,20 @@ model compression and optimization workflows.
 """
 
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 
 @dataclass
 class RecipeArguments:
     """Recipe and session variables"""
 
-    recipe: str | None = field(
+    recipe: Optional[str] = field(
         default=None,
         metadata={
             "help": "Path to a LLM Compressor sparsification recipe",
         },
     )
-    recipe_args: list[str] | None = field(
+    recipe_args: Optional[List[str]] = field(
         default=None,
         metadata={
             "help": (
@@ -28,7 +29,7 @@ class RecipeArguments:
             )
         },
     )
-    clear_sparse_session: bool | None = field(
+    clear_sparse_session: Optional[bool] = field(
         default=False,
         metadata={
             "help": (
@@ -37,7 +38,7 @@ class RecipeArguments:
             )
         },
     )
-    stage: str | None = field(
+    stage: Optional[str] = field(
         default=None,
         metadata={"help": ("The stage of the recipe to use for oneshot / train.",)},
     )

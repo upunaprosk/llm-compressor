@@ -5,12 +5,13 @@ from llmcompressor import oneshot
 from llmcompressor.modifiers.quantization import QuantizationModifier
 from llmcompressor.utils import dispatch_for_generation
 
-# NOTE: Requires a minimum of transformers 4.57.0
+# NOTE: Qwen3-Next-80B-A3B-Instruct support is not in transformers<=4.56.2
+# you may need to install transformers from source
 
 MODEL_ID = "Qwen/Qwen3-Next-80B-A3B-Instruct"
 
 # Load model.
-model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype="auto")
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID, torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
 
@@ -68,22 +69,18 @@ recipe = QuantizationModifier(
 )
 
 # Apply quantization.
-# MoE calibration is now handled automatically by the pipeline.
-# We set `moe_calibrate_all_experts` to True to ensure all experts receive
-# calibration data. This temporarily updates the model definition to use
-# `CalibrationQwen3NextSparseMoeBlock` (from `llmcompressor.modeling.qwen3_next_moe`)
-# which replaces the original `Qwen3NextSparseMoeBlock` class.
-# This updates how the forward pass is handled in the MoE block during calibration.
+# We see `calibrate_moe_context` to True to update all `Qwen3MoeSparseMoeBlock`
+# during calibration.
 # Feel free to update the definition under
-# llm-compressor/src/llmcompressor/modeling/qwen3_next_moe.py to play around with
-# this behavior and evaluate its impact on quantization performance.
+# llm-compressor/src/llmcompressor/modeling/qwen3_moe.py` to play around with
+# this behaviour and evaluate its impact on quantization performance
 oneshot(
     model=model,
     dataset=ds,
     recipe=recipe,
     max_seq_length=MAX_SEQUENCE_LENGTH,
     num_calibration_samples=NUM_CALIBRATION_SAMPLES,
-    moe_calibrate_all_experts=True,
+    calibrate_moe_context=True,
 )
 
 

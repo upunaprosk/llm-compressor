@@ -1,10 +1,8 @@
-from typing import Callable
-
 import torch
 import transformers
 from datasets import load_dataset
 from loguru import logger
-from transformers import AutoProcessor, DefaultDataCollator
+from transformers import AutoProcessor
 
 from llmcompressor import oneshot
 from llmcompressor.modifiers.quantization import GPTQModifier, QuantizationModifier
@@ -12,12 +10,15 @@ from tests.test_timer.timer_utils import log_time
 from tests.testing_utils import process_dataset
 
 
-def load_model(model: str, model_class: str, device_map: str | None = None):
+@log_time
+def _load_model_and_processor(
+    model: str,
+    model_class: str,
+):
     pretrained_model_class = getattr(transformers, model_class)
-    loaded_model = pretrained_model_class.from_pretrained(
-        model, dtype="auto", device_map=device_map
-    )
-    return loaded_model
+    loaded_model = pretrained_model_class.from_pretrained(model, torch_dtype="auto")
+    processor = AutoProcessor.from_pretrained(model)
+    return loaded_model, processor
 
 
 @log_time
@@ -36,15 +37,13 @@ def run_oneshot_for_e2e_testing(
     dataset_config: str,
     scheme: str,
     quant_type: str,
-    shuffle_calibration_samples: bool = True,
-    data_collator: str | Callable = DefaultDataCollator(),
 ):
     # Load model.
     oneshot_kwargs = {}
-    oneshot_kwargs["data_collator"] = data_collator
 
-    loaded_model = load_model(model=model, model_class=model_class)
-    processor = AutoProcessor.from_pretrained(model)
+    loaded_model, processor = _load_model_and_processor(
+        model=model, model_class=model_class
+    )
 
     if dataset_id:
         ds = load_dataset(dataset_id, name=dataset_config, split=dataset_split)
@@ -63,23 +62,7 @@ def run_oneshot_for_e2e_testing(
 
             oneshot_kwargs["data_collator"] = data_collator
 
-        elif "calibration" in dataset_id:
-
-            def data_collator(batch):
-                assert len(batch) == 1
-                return {
-                    key: (
-                        torch.tensor(value)
-                        if key != "pixel_values"
-                        else torch.tensor(value, dtype=torch.bfloat16).squeeze(0)
-                    )
-                    for key, value in batch[0].items()
-                }
-
-            oneshot_kwargs["data_collator"] = data_collator
-
     oneshot_kwargs["model"] = loaded_model
-    oneshot_kwargs["shuffle_calibration_samples"] = shuffle_calibration_samples
     if recipe:
         oneshot_kwargs["recipe"] = recipe
     else:
@@ -90,13 +73,11 @@ def run_oneshot_for_e2e_testing(
                 targets="Linear",
                 scheme=scheme,
                 actorder=None,  # added for consistency with past testing configs
-                ignore=["lm_head", "re:.*mlp.gate[.].*"],
+                ignore=["lm_head"],
             )
         else:
             oneshot_kwargs["recipe"] = QuantizationModifier(
-                targets="Linear",
-                scheme=scheme,
-                ignore=["lm_head", "re:.*mlp.gate[.].*"],
+                targets="Linear", scheme=scheme, ignore=["lm_head"]
             )
 
     # Apply quantization.

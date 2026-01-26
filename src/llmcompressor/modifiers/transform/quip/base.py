@@ -7,13 +7,11 @@ from compressed_tensors.transform import (
     TransformScheme,
     apply_transform_config,
 )
-from compressed_tensors.utils import TorchDtype, match_named_modules
+from compressed_tensors.utils import TorchDtype
 from pydantic import Field, ValidationInfo, field_validator
 
 from llmcompressor.core import Event, EventType, State
 from llmcompressor.modifiers import Modifier
-from llmcompressor.typing import NamedModules
-from llmcompressor.utils import targets_embeddings, untie_word_embeddings
 
 __all__ = ["QuIPModifier"]
 
@@ -33,16 +31,15 @@ class QuIPModifier(Modifier):
     the model weights and two of which remain as online rotations computed at runtime.
 
     Lifecycle:
-
-    - on_initialize
-        - as needed, create transform schemes for V (input) and U (output)
-    - on_start
-        - apply TransformConfig
-            - fuse transforms into weights for mergeable transforms
-            - add hooks for online transforms
-    - on sequential epoch end
-    - on_end
-    - on_finalize
+        - on_initialize
+            - as needed, create transform schemes for V (input) and U (output)
+        - on_start
+            - apply TransformConfig
+                - fuse transforms into weights for mergeable transforms
+                - add hooks for online transforms
+        - on sequential epoch end
+        - on_end
+        - on_finalize
 
     :param rotations: which rotation schemes to apply to the model. Including `"v"` will
         rotate the input side of weights, and including `"u"` will rotate the output
@@ -102,13 +99,8 @@ class QuIPModifier(Modifier):
 
     def on_start(self, state: State, event: Event, **kwargs):
         self.started_ = True
-        model = state.model
 
-        # Untie embeddings if they will be targeted by transforms
-        if targets_embeddings(model, self._get_targets(model)):
-            untie_word_embeddings(model)
-
-        apply_transform_config(model, self.transform_config)
+        apply_transform_config(state.model, self.transform_config)
 
     def on_event(self, state: State, event: Event, **kwargs):
         if event.type_ == EventType.CALIBRATION_EPOCH_START:
@@ -131,14 +123,6 @@ class QuIPModifier(Modifier):
 
         return True
 
-    def _get_targets(self, model: torch.nn.Module) -> NamedModules:
-        return [
-            (name, module)
-            for scheme in self.transform_config.config_groups.values()
-            for arg in scheme.apply
-            for name, module in match_named_modules(model, arg.targets, arg.ignore)
-        ]
-
     def _create_config(self) -> TransformConfig:
         config_groups = dict()
         if "v" in self.rotations:
@@ -155,7 +139,7 @@ class QuIPModifier(Modifier):
             apply=[
                 TransformArgs(
                     targets=self.targets,
-                    location="input",  # non-mergeable
+                    location="input",  # non-mergable
                     ignore=self.ignore,
                 ),
                 TransformArgs(
@@ -182,7 +166,7 @@ class QuIPModifier(Modifier):
                 ),
                 TransformArgs(
                     targets=self.targets,
-                    location="output",  # non-mergeable
+                    location="output",  # non-mergable
                     inverse=True,
                     ignore=self.ignore,
                 ),

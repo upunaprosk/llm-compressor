@@ -1,6 +1,6 @@
 import re
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Callable, Optional
 
 import torch
 from torch import Tensor
@@ -23,7 +23,7 @@ class PruningMaskCreatorArgs:
     parameter: Parameter
     sparsity: float
     scores: Tensor
-    prev_mask: Tensor | None = None
+    prev_mask: Optional[Tensor] = None
 
 
 MaskCreatorType = Callable[[PruningMaskCreatorArgs], Tensor]

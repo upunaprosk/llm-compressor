@@ -7,6 +7,8 @@ detection. Supports MoE (Mixture of Experts) models and specialized
 tensor operations for compression workflows.
 """
 
+from typing import Dict
+
 import torch
 from torch.nn import Module
 
@@ -16,7 +18,7 @@ __all__ = [
 ]
 
 
-def apply_pad_mask_to_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+def apply_pad_mask_to_batch(batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     """
     Apply a mask to the input ids of a batch. This is used to zero out
     padding tokens so they do not contribute to the hessian calculation in the
