@@ -36,8 +36,8 @@ def accumulate_hessian(
     alpha = float(os.environ.get("ALPHA", "0"))
     H_x01 = None
     if alpha != 0.0 and inp.shape[0] == 2:
-        X0 = inp[0].to(dtype=SGPT_PRECISION)  # Shape: [seq_len, hidden_dim]
-        X1 = inp[1].to(dtype=SGPT_PRECISION)  # Shape: [seq_len, hidden_dim]
+        X0 = inp[0]  # Shape: [seq_len, hidden_dim]
+        X1 = inp[1]  # Shape: [seq_len, hidden_dim]
         delta = math.sqrt(2 / (num_samples + num_added)) * (X0 - X1)
         H_x01 = delta.t().matmul(delta)
     # if H_x01 is None:
