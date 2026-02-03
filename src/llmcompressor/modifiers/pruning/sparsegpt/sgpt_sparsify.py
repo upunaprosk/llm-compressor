@@ -5,7 +5,7 @@ import torch
 import transformers
 from loguru import logger
 
-SGPT_PRECISION = torch.float16
+SGPT_PRECISION = torch.float32
 
 
 def make_empty_hessian(
