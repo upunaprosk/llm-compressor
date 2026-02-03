@@ -99,7 +99,7 @@ for entry in data['data']['intrasentence']:
 #             # examples.append(X0) # debug sanity check: (X0, X0) => H_x01 == 0
 print(examples[:2])
 
-dataset = Dataset.from_dict({"text": examples}) 
+dataset = Dataset.from_dict({"text": examples})
 
 dataset_loader = DataLoader(dataset, batch_size=2, shuffle=False, collate_fn=None)
 
@@ -143,6 +143,26 @@ sparsity_stage:
     SparseGPTModifier:
       sparsity: 0.25
       mask_structure: "1:4"
+      targets: ["Linear"]
+      ignore: ["re:.*lm_head"]
+"""
+elif sparsity == "50":
+    recipe = "50_recipe.yaml"
+    RECIPE_YAML = """
+sparsity_stage:
+  sparsity_modifiers:
+    SparseGPTModifier:
+      sparsity: 0.5
+      targets: ["Linear"]
+      ignore: ["re:.*lm_head"]
+"""
+elif sparsity == "25":
+    recipe = "25_recipe.yaml"
+    RECIPE_YAML = """
+sparsity_stage:
+  sparsity_modifiers:
+    SparseGPTModifier:
+      sparsity: 0.25
       targets: ["Linear"]
       ignore: ["re:.*lm_head"]
 """

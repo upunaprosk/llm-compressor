@@ -6,7 +6,7 @@ import transformers
 from loguru import logger
 
 SGPT_PRECISION = torch.float32
-
+SGPT_PRECISION_X = torch.float16
 
 def make_empty_hessian(
     module: torch.nn.Module, device: Optional[torch.device] = None
@@ -36,8 +36,8 @@ def accumulate_hessian(
     alpha = float(os.environ.get("ALPHA", "0"))
     H_x01 = None
     if alpha != 0.0 and inp.shape[0] == 2:
-        X0 = inp[0]  # Shape: [seq_len, hidden_dim]
-        X1 = inp[1]  # Shape: [seq_len, hidden_dim]
+        X0 = inp[0].to(dtype=SGPT_PRECISION_X)  # Shape: [seq_len, hidden_dim]
+        X1 = inp[1].to(dtype=SGPT_PRECISION_X)  # Shape: [seq_len, hidden_dim]
         delta = math.sqrt(2 / (num_samples + num_added)) * (X0 - X1)
         H_x01 = delta.t().matmul(delta)
     # if H_x01 is None:
