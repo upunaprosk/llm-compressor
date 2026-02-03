@@ -117,7 +117,6 @@ def get_calibration_dataloader(
         do_shuffle=dataset_args.shuffle_calibration_samples,
         collate_fn=dataset_args.data_collator,
         processor=processor,
-        batch_size=dataset_args.batch_size,
     )
 
 
@@ -127,7 +126,6 @@ def format_calibration_data(
     do_shuffle: bool = True,
     collate_fn: Callable = default_data_collator,
     processor: Processor = None,
-    batch_size = 1,
 ) -> List[torch.Tensor]:
     """
     Creates a dataloader out of the calibration dataset split, trimming it to
@@ -150,10 +148,10 @@ def format_calibration_data(
 
     ###########################################
     # Ensure batch_size = 2 and disable shuffle
-    # batch_size = 2
+    batch_size = 2
     do_shuffle = False
     # collate data
-    if batch_size > 1 and collate_fn is None:
+    if collate_fn is None:
         if processor is None:
                 logger.warning("Processor is not passed, cannot set collate_fn, set batch_size = 1")
                 batch_size = 1
