@@ -5,13 +5,16 @@ import torch
 import transformers
 from loguru import logger
 
+SGPT_PRECISION = torch.float16
+
+
 def make_empty_hessian(
     module: torch.nn.Module, device: Optional[torch.device] = None
 ) -> torch.Tensor:
     weight = module.weight
     num_columns = weight.shape[1]
     device = device if device is not None else weight.device
-    return torch.zeros((num_columns, num_columns), device=device)
+    return torch.zeros((num_columns, num_columns), device=device, dtype=SGPT_PRECISION)
 
 
 def accumulate_hessian(
@@ -71,6 +74,7 @@ def accumulate_hessian(
     H *= num_samples / (num_samples + num_added)
     num_samples += num_added
 
+    inp = inp.to(dtype=SGPT_PRECISION)
     inp = math.sqrt(2 / num_samples) * inp
     H += inp.matmul(inp.t())
 
@@ -117,6 +121,7 @@ def sparsify_weight(
         W = W.flatten(1)
     elif isinstance(module, transformers.Conv1D):
         W.transpose_(0, 1)
+    W = W.to(dtype=SGPT_PRECISION)
     num_rows = W.shape[0]
     num_columns = W.shape[1]
 
